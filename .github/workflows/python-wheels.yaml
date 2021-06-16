@@ -1,0 +1,136 @@
+name: Python package
+
+on: [push, pull_request]
+
+jobs:
+  check-api:
+    name: Check API Script
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: API Check Script
+        shell: bash
+        run: ./api_check.sh
+        working-directory: scripts
+  build-python-sdist:
+    name: Build Python Source distribution
+    runs-on: ubuntu-20.04
+    needs: [check-api]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        name: Install Python
+        with:
+          python-version: 3.9
+      - name: Install Python build tool
+        run: python -m pip install build
+      - name: Build sdist
+        run: python -m build --sdist --outdir dist/
+      - name: Display structure of dist files
+        run: ls -R
+        working-directory: dist
+      - name: SHA512 files
+        run: find . -type f -exec sha512sum {} \;
+        working-directory: dist
+      - uses: actions/upload-artifact@v2
+        with:
+          name: python-dist
+          path: dist/*.tar.gz
+  verify-python-sdist:
+    name: Verify Python Source distribution
+    needs: [build-python-sdist]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download python-dist artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: python-dist
+          path: dist/
+      - name: Install build deps
+        run: sudo bash ./wrappers/python/install_build_deps.sh
+      - uses: actions/setup-python@v2
+        name: Install Python
+        with:
+          python-version: 3.9
+      - name: Install sdist
+        run: python -m pip install dist/*.tar.gz
+  build-python-wheels:
+    name: Build wheel ${{ matrix.python-version }}-${{ matrix.arch }}
+    needs: [check-api]
+    strategy:
+      fail-fast: false
+      matrix:
+        # os: [ubuntu-20.04, windows-2019, macos-10.15]
+        include:
+          - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp36 }
+          - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp37 }
+          - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp38 }
+          - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp39 }
+          - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp36 }
+          - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp37 }
+          - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp38 }
+          - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp39 }
+          - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp36 }
+          - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp37 }
+          - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp38 }
+          - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp39 }
+          # - os: windows-2019
+            # arch: win_amd64
+          # - os: windows-2019
+          #   arch: win32
+          # - os: macos-10.15
+            # arch: macosx_x86_64
+          # - os: macos-10.15
+            # python-version: cp39
+            # arch: macosx_universal2  # new mac builds only available on cpython3.9+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up QEMU
+        if: runner.os == 'Linux' && matrix.arch != 'manylinux_x86_64'
+        uses: docker/setup-qemu-action@v1
+        with:
+          platforms: all
+      - name: Build wheels
+        # will also auto-repair wheels
+        uses: pypa/cibuildwheel@v1.11.1
+        env:
+          CIBW_BUILD: ${{ matrix.python-version }}-${{ matrix.arch }}
+          CIBW_ARCHS: 'all'
+          CIBW_ENVIRONMENT: "LRS_BUILD_CONFIG='Debug' LRS_RUN_CONFIG='Release'"
+          CIBW_BEFORE_BUILD_LINUX: 'bash ./wrappers/python/install_build_deps.sh'
+          CIBW_MANYLINUX_X86_64_IMAGE: dockcross/manylinux2014-x64
+          CIBW_MANYLINUX_I686_IMAGE: dockcross/manylinux2014-x86
+          CIBW_MANYLINUX_AARCH64_IMAGE: dockcross/manylinux2014-aarch64
+      - name: Display structure of wheelhouse files
+        shell: bash
+        run: ls -R
+        working-directory: wheelhouse
+      - name: SHA512 files
+        shell: bash
+        run: find . -type f -name "*.whl" -exec sha512sum {} \;
+        working-directory: wheelhouse
+      - uses: actions/upload-artifact@v2
+        with:
+          name: python-dist
+          path: ./wheelhouse/*.whl
+
+
+  
+      # - name: Install dependencies
+      #   run: |
+      #     sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test;
+      #     sudo apt-get update;
+      #     sudo apt-get install -qq build-essential xorg-dev libgl1-mesa-dev libglu1-mesa-dev libglew-dev libglm-dev;
+      #     sudo apt-get install -qq libusb-1.0-0-dev;
+      #     sudo apt-get install -qq libgtk-3-dev;
+      #     sudo apt-get install gcc-5 g++-5;
+      #     sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 60 --slave /usr/bin/g++ g++ /usr/bin/g++-5;
+      #     sudo apt-get install libglfw3-dev libglfw3;
+      # - name: Build
+      #   run: |
+      #     mkdir build && cd build
+      #     cmake .. -DBUILD_PYTHON_BINDINGS=true -DPYBIND11_PYTHON_VERSION=${{ matrix.python-version }} -DCHECK_FOR_UPDATES=true
+      #     cmake --build . --config $LRS_BUILD_CONFIG -- -j4
+

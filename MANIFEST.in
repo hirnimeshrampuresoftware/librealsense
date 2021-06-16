@@ -1,0 +1,17 @@
+# Files to include in Python library
+
+include pyproject.toml
+include setup.py
+include LICENSE
+include NOTICE
+
+graft wrappers/python
+include wrappers/CMakeLists.txt
+include CMakeLists.txt
+include cmake_uninstall.cmake
+graft CMake
+graft common
+graft config
+graft include
+graft src
+graft third-party
