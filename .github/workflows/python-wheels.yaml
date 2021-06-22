@@ -67,23 +67,28 @@ jobs:
           - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp37 }
           - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp38 }
           - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp39 }
-          - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp36 }
-          - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp37 }
-          - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp38 }
-          - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp39 }
+          # cryptography package does not have i686 wheel, so must be built with Rust
+          # - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp36 }
+          # - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp37 }
+          # - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp38 }
+          # - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp39 }
           - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp36 }
           - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp37 }
           - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp38 }
           - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp39 }
-          # - os: windows-2019
-            # arch: win_amd64
-          # - os: windows-2019
-          #   arch: win32
-          # - os: macos-10.15
-            # arch: macosx_x86_64
-          # - os: macos-10.15
-            # python-version: cp39
-            # arch: macosx_universal2  # new mac builds only available on cpython3.9+
+          # - { os: windows-2019, arch: win_amd64,         python-version: cp36 }
+          # - { os: windows-2019, arch: win_amd64,         python-version: cp37 }
+          # - { os: windows-2019, arch: win_amd64,         python-version: cp38 }
+          # - { os: windows-2019, arch: win_amd64,         python-version: cp39 }
+          # - { os: windows-2019, arch: win32,             python-version: cp36 }
+          # - { os: windows-2019, arch: win32,             python-version: cp37 }
+          # - { os: windows-2019, arch: win32,             python-version: cp38 }
+          # - { os: windows-2019, arch: win32,             python-version: cp39 }
+          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp36 }
+          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp37 }
+          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp38 }
+          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp39 }
+          # - { os: macos-10.15,  arch: macosx_arm64,      python-version: cp39 }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -93,16 +98,12 @@ jobs:
         with:
           platforms: all
       - name: Build wheels
-        # will also auto-repair wheels
+        # will also auto-repair wheels too
         uses: pypa/cibuildwheel@v1.11.1
         env:
           CIBW_BUILD: ${{ matrix.python-version }}-${{ matrix.arch }}
           CIBW_ARCHS: 'all'
-          CIBW_ENVIRONMENT: "LRS_BUILD_CONFIG='Debug' LRS_RUN_CONFIG='Release'"
           CIBW_BEFORE_BUILD_LINUX: 'bash ./wrappers/python/install_build_deps.sh'
-          CIBW_MANYLINUX_X86_64_IMAGE: dockcross/manylinux2014-x64
-          CIBW_MANYLINUX_I686_IMAGE: dockcross/manylinux2014-x86
-          CIBW_MANYLINUX_AARCH64_IMAGE: dockcross/manylinux2014-aarch64
       - name: Display structure of wheelhouse files
         shell: bash
         run: ls -R
