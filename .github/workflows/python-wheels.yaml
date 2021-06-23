@@ -29,15 +29,15 @@ jobs:
       - name: Display structure of dist files
         run: ls -R
         working-directory: dist
-      - name: SHA512 files
-        run: find . -type f -exec sha512sum {} \;
+      - name: SHA256 files
+        run: find . -type f -exec sha256sum {} \;
         working-directory: dist
       - uses: actions/upload-artifact@v2
         with:
           name: python-dist
           path: dist/*.tar.gz
   verify-python-sdist:
-    name: Verify Python Source distribution
+    name: Verify Python Source distribution (ubuntu-20.04)
     needs: [build-python-sdist]
     runs-on: ubuntu-20.04
     steps:
@@ -47,6 +47,9 @@ jobs:
         with:
           name: python-dist
           path: dist/
+      - name: SHA256 files
+        run: find . -type f -exec sha256sum {} \;
+        working-directory: dist
       - name: Install build deps
         run: sudo bash ./scripts/github_action_install_build_deps_linux.sh
       - uses: actions/setup-python@v2
@@ -116,21 +119,26 @@ jobs:
         shell: bash
         run: ls -R
         working-directory: wheelhouse
-      - name: SHA512 files
+      - name: SHA256 files
         shell: bash
-        run: find . -type f -name "*.whl" -exec sha512sum {} \;
+        run: find . -type f -name "*.whl" -exec sha256sum {} \;
         working-directory: wheelhouse
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v2
         with:
           name: python-dist
           path: ./wheelhouse/*.whl
-      - name: Upload wheel artifact (on failure)
+      - name: Display structure of wheelhouse files (Linux failed wheels)
+        if: ${{ failure() && runner.os == 'Linux' }}
+        shell: bash
+        run: ls -R
+        working-directory: /tmp/cibuildwheel/built_wheel/
+      - name: Upload wheel artifact (Linux failed wheels)
         uses: actions/upload-artifact@v2
-        if: ${{ failure() }}
+        if: ${{ failure() && runner.os == 'Linux' }}
         with:
           name: python-dist-failed
-          path: ./wheelhouse/*.whl
+          path: /tmp/cibuildwheel/built_wheel/*.whl
 
 
   
