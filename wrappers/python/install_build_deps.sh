@@ -3,5 +3,5 @@
 if [ -n "$(which apt-get)" ]; then
   apt-get install -y build-essential cmake libssl-dev libusb-1.0-0-dev pkg-config libgtk-3-dev
 elif [ -n "$(which yum)" ]; then
-  yum install -y openssl-devel libusb-devel gtk3-devel
+  yum install -y openssl-devel libusbx-devel gtk3-devel
 fi
