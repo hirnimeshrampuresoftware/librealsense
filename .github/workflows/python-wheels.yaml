@@ -37,9 +37,14 @@ jobs:
           name: python-dist
           path: dist/*.tar.gz
   verify-python-sdist:
-    name: Verify Python Source distribution (ubuntu-20.04)
+    name: Verify Python Source dist (${{ matrix.os }} ${{ matrix.python-version }})
     needs: [build-python-sdist]
-    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, macos-10.15]
+        python-version: [3.9]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
       - name: Download python-dist artifact
@@ -50,14 +55,21 @@ jobs:
       - name: SHA256 files
         run: find . -type f -exec sha256sum {} \;
         working-directory: dist
-      - name: Install build deps
+      - name: Install build deps (Linux)
+        if: ${{ runner.os == 'Linux' }}
         run: sudo bash ./scripts/github_action_install_build_deps_linux.sh
+      - name: Install build deps (macOS)
+        if: ${{ runner.os == 'macOS' }}
+        run: sudo bash ./scripts/github_action_install_build_deps_macos.sh
       - uses: actions/setup-python@v2
         name: Install Python
         with:
-          python-version: 3.9
+          python-version: ${{ matrix.python-version }}
       - name: Install sdist
-        run: python -m pip install dist/*.tar.gz
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "macOS" ]; then export OPENSSL_ROOT_DIR=$(brew --prefix openssl); fi
+          python -m pip install dist/*.tar.gz
   build-python-wheels:
     name: Build wheel ${{ matrix.python-version }}-${{ matrix.arch }}
     needs: [check-api]
@@ -114,6 +126,7 @@ jobs:
           CIBW_MANYLINUX_AARCH64_IMAGE: ${{ matrix.manylinux_image }}
           CIBW_MANYLINUX_PPC64LE_IMAGE: ${{ matrix.manylinux_image }}
           CIBW_MANYLINUX_S390X_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: ''
       - name: Display structure of wheelhouse files
         if: ${{ always() }}
         shell: bash
@@ -128,17 +141,6 @@ jobs:
         with:
           name: python-dist
           path: ./wheelhouse/*.whl
-      - name: Display structure of wheelhouse files (Linux failed wheels)
-        if: ${{ failure() && runner.os == 'Linux' }}
-        shell: bash
-        run: ls -R
-        working-directory: /tmp/cibuildwheel/built_wheel/
-      - name: Upload wheel artifact (Linux failed wheels)
-        uses: actions/upload-artifact@v2
-        if: ${{ failure() && runner.os == 'Linux' }}
-        with:
-          name: python-dist-failed
-          path: /tmp/cibuildwheel/built_wheel/*.whl
 
 
   
