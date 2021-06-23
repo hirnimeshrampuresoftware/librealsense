@@ -1,5 +1,5 @@
-#  minimum required cmake version: 3.1.0
-cmake_minimum_required(VERSION 3.1.0)
+#  minimum required cmake version: 3.18.0
+cmake_minimum_required(VERSION 3.18.0)
 
 project(RealsensePythonWrappers)
 
@@ -8,21 +8,6 @@ if (NOT BUILD_PYTHON_BINDINGS)
 endif()
 
 set(DEPENDENCIES realsense2)
-# In order for the external project clone to occur during cmake configure step(rather than during compilation, as would normally happen),
-# we copy the external project declaration to the build folder and then execute it
-configure_file(${CMAKE_SOURCE_DIR}/third-party/pybind11/CMakeLists.txt ${CMAKE_BINARY_DIR}/external-projects/pybind11/CMakeLists.txt)
-execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/external-projects/pybind11"
-)
-execute_process(COMMAND "${CMAKE_COMMAND}" --build .
-    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/external-projects/pybind11"
-)
-
-# Add pybind11 makefile
-add_subdirectory("${CMAKE_BINARY_DIR}/third-party/pybind11"
-                 "${CMAKE_BINARY_DIR}/third-party/pybind11"
-                 EXCLUDE_FROM_ALL
-)
 
 set(PYBIND11_CPP_STANDARD -std=c++11)
 # Force Pybind11 not to share pyrealsense2 resources with other pybind modules.
@@ -49,11 +34,8 @@ set(PYRS_CPP
     pyrsutil.cpp
 )
 
-pybind11_add_module(pyrealsense2 SHARED python.hpp ${PYRS_CPP})
-
-# pybind11 version 2.6.1 require find_package to run after pybind11_add_module call,
-# This way the pybind takes the python version set in PYTHON_EXECUTABLE variable.
 if((SKBUILD) AND (DEFINED ENV{CIBUILDWHEEL}))
+  message(STATUS "Building with SKBUILD and CIBUILDHWEEL")
   set(Python_EXECUTABLE "${PYTHON_EXECUTABLE}")
   set(Python_INCLUDE_DIR "${PYTHON_INCLUDE_DIR}")
   set(Python_LIBRARY "${PYTHON_LIBRARY}")
@@ -69,9 +51,27 @@ else()
   else()
     find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
   endif()
-  set(PYTHON_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/pyrealsense2" CACHE PATH "Installation directory for Python bindings")
+  set(PYTHON_INSTALL_DIR "${CMAKE_SOURCE_DIR}/wrappers/python/pyrealsense2" CACHE PATH "Installation directory for Python bindings")
   set(CMAKECONFIG_PY_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/pyrealsense2")
 endif()
+
+# In order for the external project clone to occur during cmake configure step(rather than during compilation, as would normally happen),
+# we copy the external project declaration to the build folder and then execute it
+configure_file(${CMAKE_SOURCE_DIR}/third-party/pybind11/CMakeLists.txt ${CMAKE_BINARY_DIR}/external-projects/pybind11/CMakeLists.txt)
+execute_process(COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/external-projects/pybind11"
+)
+execute_process(COMMAND "${CMAKE_COMMAND}" --build .
+    WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/external-projects/pybind11"
+)
+
+# Add pybind11 makefile
+add_subdirectory("${CMAKE_BINARY_DIR}/third-party/pybind11"
+                 "${CMAKE_BINARY_DIR}/third-party/pybind11"
+                 EXCLUDE_FROM_ALL
+)
+
+pybind11_add_module(pyrealsense2 SHARED python.hpp ${PYRS_CPP})
 
 target_link_libraries(pyrealsense2 PRIVATE ${DEPENDENCIES})
 set_target_properties(pyrealsense2 PROPERTIES VERSION

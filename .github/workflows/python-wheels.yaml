@@ -60,7 +60,7 @@ jobs:
         run: sudo bash ./scripts/github_action_install_build_deps_linux.sh
       - name: Install build deps (macOS)
         if: ${{ runner.os == 'macOS' }}
-        run: sudo bash ./scripts/github_action_install_build_deps_macos.sh
+        run: bash ./scripts/github_action_install_build_deps_macos.sh
       - uses: actions/setup-python@v2
         name: Install Python
         with:

@@ -68,4 +68,5 @@ setup(
         # '-DPYTHON_LIBRARY=' + sysconfig.get_config_var('LIBDIR')
     ],
     zip_safe=False,
+    include_package_data=False
 )
