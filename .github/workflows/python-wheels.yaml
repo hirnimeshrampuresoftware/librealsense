@@ -48,7 +48,7 @@ jobs:
           name: python-dist
           path: dist/
       - name: Install build deps
-        run: sudo bash ./wrappers/python/install_build_deps.sh
+        run: sudo bash ./scripts/github_action_install_build_deps_linux.sh
       - uses: actions/setup-python@v2
         name: Install Python
         with:
@@ -61,34 +61,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # os: [ubuntu-20.04, windows-2019, macos-10.15]
         include:
-          - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp36 }
-          - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp37 }
-          - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp38 }
-          - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp39 }
+          - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp36, manylinux_image: manylinux2014 }
+          - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp37, manylinux_image: manylinux2014 }
+          - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp38, manylinux_image: manylinux2014 }
+          - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp39, manylinux_image: manylinux2014 }
           # cryptography package does not have i686 wheel, so must be built with Rust
-          # - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp36 }
-          # - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp37 }
-          # - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp38 }
-          # - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp39 }
-          - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp36 }
-          - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp37 }
-          - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp38 }
-          - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp39 }
-          # - { os: windows-2019, arch: win_amd64,         python-version: cp36 }
-          # - { os: windows-2019, arch: win_amd64,         python-version: cp37 }
-          # - { os: windows-2019, arch: win_amd64,         python-version: cp38 }
-          # - { os: windows-2019, arch: win_amd64,         python-version: cp39 }
-          # - { os: windows-2019, arch: win32,             python-version: cp36 }
-          # - { os: windows-2019, arch: win32,             python-version: cp37 }
-          # - { os: windows-2019, arch: win32,             python-version: cp38 }
-          # - { os: windows-2019, arch: win32,             python-version: cp39 }
-          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp36 }
-          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp37 }
-          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp38 }
-          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp39 }
-          # - { os: macos-10.15,  arch: macosx_arm64,      python-version: cp39 }
+          # - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp36, manylinux_image: manylinux2014 }
+          # - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp37, manylinux_image: manylinux2014 }
+          # - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp38, manylinux_image: manylinux2014 }
+          # - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp39, manylinux_image: manylinux2014 }
+          - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp36, manylinux_image: manylinux2014 }
+          - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp37, manylinux_image: manylinux2014 }
+          - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp38, manylinux_image: manylinux2014 }
+          - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp39, manylinux_image: manylinux2014 }
+          # - { os: windows-2019, arch: win_amd64,         python-version: cp36, manylinux_image: nonmanylinux }
+          # - { os: windows-2019, arch: win_amd64,         python-version: cp37, manylinux_image: nonmanylinux }
+          # - { os: windows-2019, arch: win_amd64,         python-version: cp38, manylinux_image: nonmanylinux }
+          # - { os: windows-2019, arch: win_amd64,         python-version: cp39, manylinux_image: nonmanylinux }
+          # - { os: windows-2019, arch: win32,             python-version: cp36, manylinux_image: nonmanylinux }
+          # - { os: windows-2019, arch: win32,             python-version: cp37, manylinux_image: nonmanylinux }
+          # - { os: windows-2019, arch: win32,             python-version: cp38, manylinux_image: nonmanylinux }
+          # - { os: windows-2019, arch: win32,             python-version: cp39, manylinux_image: nonmanylinux }
+          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp36, manylinux_image: nonmanylinux }
+          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp37, manylinux_image: nonmanylinux }
+          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp38, manylinux_image: nonmanylinux }
+          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp39, manylinux_image: nonmanylinux }
+          # - { os: macos-10.15,  arch: macosx_arm64,      python-version: cp39, manylinux_image: nonmanylinux }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -103,8 +102,15 @@ jobs:
         env:
           CIBW_BUILD: ${{ matrix.python-version }}-${{ matrix.arch }}
           CIBW_ARCHS: 'all'
-          CIBW_BEFORE_BUILD_LINUX: 'bash ./wrappers/python/install_build_deps.sh'
+          CIBW_BEFORE_BUILD_LINUX: 'bash ./scripts/github_action_install_build_deps_linux.sh'
+          CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_MANYLINUX_I686_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_MANYLINUX_PYPY_X86_64_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_MANYLINUX_AARCH64_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_MANYLINUX_PPC64LE_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_MANYLINUX_S390X_IMAGE: ${{ matrix.manylinux_image }}
       - name: Display structure of wheelhouse files
+        if: ${{ always() }}
         shell: bash
         run: ls -R
         working-directory: wheelhouse
@@ -115,6 +121,11 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: python-dist
+          path: ./wheelhouse/*.whl
+      - uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
+        with:
+          name: python-dist-failed
           path: ./wheelhouse/*.whl
 
 
