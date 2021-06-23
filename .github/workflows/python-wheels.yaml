@@ -98,11 +98,11 @@ jobs:
           # - { os: windows-2019, arch: win32,             python-version: cp37, manylinux_image: nonmanylinux }
           # - { os: windows-2019, arch: win32,             python-version: cp38, manylinux_image: nonmanylinux }
           # - { os: windows-2019, arch: win32,             python-version: cp39, manylinux_image: nonmanylinux }
-          - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp36, manylinux_image: nonmanylinux }
-          - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp37, manylinux_image: nonmanylinux }
-          - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp38, manylinux_image: nonmanylinux }
-          - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp39, manylinux_image: nonmanylinux }
-          - { os: macos-10.15,  arch: macosx_arm64,      python-version: cp39, manylinux_image: nonmanylinux }
+          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp36, manylinux_image: nonmanylinux }
+          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp37, manylinux_image: nonmanylinux }
+          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp38, manylinux_image: nonmanylinux }
+          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp39, manylinux_image: nonmanylinux }
+          # - { os: macos-10.15,  arch: macosx_arm64,      python-version: cp39, manylinux_image: nonmanylinux }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
