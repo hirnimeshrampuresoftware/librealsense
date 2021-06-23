@@ -70,7 +70,7 @@ else()
   else()
     find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
   endif()
-  set(PYTHON_INSTALL_DIR "${CMAKE_SOURCE_DIR}/wrappers/python/pyrealsense2" CACHE PATH "Installation directory for Python bindings")
+  set(PYTHON_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/wrappers/python/pyrealsense2" CACHE PATH "Installation directory for Python bindings")
   set(CMAKECONFIG_PY_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/pyrealsense2")
 endif()
 
