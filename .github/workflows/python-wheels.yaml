@@ -83,11 +83,11 @@ jobs:
           # - { os: windows-2019, arch: win32,             python-version: cp37, manylinux_image: nonmanylinux }
           # - { os: windows-2019, arch: win32,             python-version: cp38, manylinux_image: nonmanylinux }
           # - { os: windows-2019, arch: win32,             python-version: cp39, manylinux_image: nonmanylinux }
-          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp36, manylinux_image: nonmanylinux }
-          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp37, manylinux_image: nonmanylinux }
-          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp38, manylinux_image: nonmanylinux }
-          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp39, manylinux_image: nonmanylinux }
-          # - { os: macos-10.15,  arch: macosx_arm64,      python-version: cp39, manylinux_image: nonmanylinux }
+          - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp36, manylinux_image: nonmanylinux }
+          - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp37, manylinux_image: nonmanylinux }
+          - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp38, manylinux_image: nonmanylinux }
+          - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp39, manylinux_image: nonmanylinux }
+          - { os: macos-10.15,  arch: macosx_arm64,      python-version: cp39, manylinux_image: nonmanylinux }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -103,6 +103,8 @@ jobs:
           CIBW_BUILD: ${{ matrix.python-version }}-${{ matrix.arch }}
           CIBW_ARCHS: 'all'
           CIBW_BEFORE_BUILD_LINUX: 'bash ./scripts/github_action_install_build_deps_linux.sh'
+          CIBW_BEFORE_BUILD_MACOS: 'bash ./scripts/github_action_install_build_deps_macos.sh'
+          CIBW_ENVIRONMENT_MACOS: 'OPENSSL_ROOT_DIR=$(brew --prefix openssl)'
           CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.manylinux_image }}
           CIBW_MANYLINUX_I686_IMAGE: ${{ matrix.manylinux_image }}
           CIBW_MANYLINUX_PYPY_X86_64_IMAGE: ${{ matrix.manylinux_image }}
@@ -118,11 +120,13 @@ jobs:
         shell: bash
         run: find . -type f -name "*.whl" -exec sha512sum {} \;
         working-directory: wheelhouse
-      - uses: actions/upload-artifact@v2
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v2
         with:
           name: python-dist
           path: ./wheelhouse/*.whl
-      - uses: actions/upload-artifact@v2
+      - name: Upload wheel artifact (on failure)
+        uses: actions/upload-artifact@v2
         if: ${{ failure() }}
         with:
           name: python-dist-failed
