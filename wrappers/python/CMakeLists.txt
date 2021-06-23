@@ -53,7 +53,7 @@ pybind11_add_module(pyrealsense2 SHARED python.hpp ${PYRS_CPP})
 
 # pybind11 version 2.6.1 require find_package to run after pybind11_add_module call,
 # This way the pybind takes the python version set in PYTHON_EXECUTABLE variable.
-if(SKBUILD)
+if((SKBUILD) AND (DEFINED PYTHON_EXECUTABLE) AND (DEFINED PYTHON_INCLUDE_DIR) AND (DEFINED PYTHON_LIBRARY))
   set(Python_EXECUTABLE "${PYTHON_EXECUTABLE}")
   set(Python_INCLUDE_DIR "${PYTHON_INCLUDE_DIR}")
   set(Python_LIBRARY "${PYTHON_LIBRARY}")
