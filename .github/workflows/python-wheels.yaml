@@ -1,0 +1,143 @@
+name: Python package
+
+on: [push, pull_request]
+
+jobs:
+  check-api:
+    name: Check API Script
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: API Check Script
+        shell: bash
+        run: ./api_check.sh
+        working-directory: scripts
+  build-python-sdist:
+    name: Build Python Source distribution
+    runs-on: ubuntu-20.04
+    needs: [check-api]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        name: Install Python
+        with:
+          python-version: 3.9
+      - name: Install Python build tool
+        run: python -m pip install build
+      - name: Build sdist
+        run: python -m build --sdist --outdir dist/
+      - name: Display structure of dist files
+        run: ls -R
+        working-directory: dist
+      - name: SHA256 files
+        run: find . -type f -exec sha256sum {} \;
+        working-directory: dist
+      - uses: actions/upload-artifact@v2
+        with:
+          name: python-dist
+          path: dist/*.tar.gz
+  verify-python-sdist:
+    name: Verify Python Source dist (${{ matrix.os }} ${{ matrix.python-version }})
+    needs: [build-python-sdist]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-20.04, macos-10.15]
+        python-version: [3.9]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download python-dist artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: python-dist
+          path: dist/
+      - name: SHA256 files
+        run: find . -type f -exec sha256sum {} \;
+        working-directory: dist
+      - name: Install build deps (Linux)
+        if: ${{ runner.os == 'Linux' }}
+        run: sudo bash ./scripts/github_action_install_build_deps_linux.sh
+      - name: Install build deps (macOS)
+        if: ${{ runner.os == 'macOS' }}
+        run: bash ./scripts/github_action_install_build_deps_macos.sh
+      - uses: actions/setup-python@v2
+        name: Install Python
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install sdist
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "macOS" ]; then export OPENSSL_ROOT_DIR=$(brew --prefix openssl); fi
+          python -m pip install dist/*.tar.gz
+  build-python-wheels:
+    name: Build wheel ${{ matrix.python-version }}-${{ matrix.arch }}
+    needs: [check-api]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp36, manylinux_image: manylinux2014 }
+          - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp37, manylinux_image: manylinux2014 }
+          - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp38, manylinux_image: manylinux2014 }
+          - { os: ubuntu-20.04, arch: manylinux_x86_64,  python-version: cp39, manylinux_image: manylinux2014 }
+          # cryptography package does not have i686 wheel, so must be built with Rust
+          # - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp36, manylinux_image: manylinux2014 }
+          # - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp37, manylinux_image: manylinux2014 }
+          # - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp38, manylinux_image: manylinux2014 }
+          # - { os: ubuntu-20.04, arch: manylinux_i686,    python-version: cp39, manylinux_image: manylinux2014 }
+          - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp36, manylinux_image: manylinux2014 }
+          - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp37, manylinux_image: manylinux2014 }
+          - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp38, manylinux_image: manylinux2014 }
+          - { os: ubuntu-20.04, arch: manylinux_aarch64, python-version: cp39, manylinux_image: manylinux2014 }
+          # - { os: windows-2019, arch: win_amd64,         python-version: cp36, manylinux_image: nonmanylinux }
+          # - { os: windows-2019, arch: win_amd64,         python-version: cp37, manylinux_image: nonmanylinux }
+          # - { os: windows-2019, arch: win_amd64,         python-version: cp38, manylinux_image: nonmanylinux }
+          # - { os: windows-2019, arch: win_amd64,         python-version: cp39, manylinux_image: nonmanylinux }
+          # - { os: windows-2019, arch: win32,             python-version: cp36, manylinux_image: nonmanylinux }
+          # - { os: windows-2019, arch: win32,             python-version: cp37, manylinux_image: nonmanylinux }
+          # - { os: windows-2019, arch: win32,             python-version: cp38, manylinux_image: nonmanylinux }
+          # - { os: windows-2019, arch: win32,             python-version: cp39, manylinux_image: nonmanylinux }
+          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp36, manylinux_image: nonmanylinux }
+          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp37, manylinux_image: nonmanylinux }
+          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp38, manylinux_image: nonmanylinux }
+          # - { os: macos-10.15,  arch: macosx_x86_64,     python-version: cp39, manylinux_image: nonmanylinux }
+          # - { os: macos-10.15,  arch: macosx_arm64,      python-version: cp39, manylinux_image: nonmanylinux }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up QEMU
+        if: runner.os == 'Linux' && matrix.arch != 'manylinux_x86_64'
+        uses: docker/setup-qemu-action@v1
+        with:
+          platforms: all
+      - name: Build wheels
+        # will also auto-repair wheels too
+        uses: pypa/cibuildwheel@v1.11.1
+        env:
+          CIBW_BUILD: ${{ matrix.python-version }}-${{ matrix.arch }}
+          CIBW_ARCHS: 'all'
+          CIBW_BEFORE_BUILD_LINUX: 'bash ./scripts/github_action_install_build_deps_linux.sh'
+          CIBW_BEFORE_BUILD_MACOS: 'bash ./scripts/github_action_install_build_deps_macos.sh'
+          CIBW_ENVIRONMENT_MACOS: 'OPENSSL_ROOT_DIR=$(brew --prefix openssl)'
+          CIBW_MANYLINUX_X86_64_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_MANYLINUX_I686_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_MANYLINUX_PYPY_X86_64_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_MANYLINUX_AARCH64_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_MANYLINUX_PPC64LE_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_MANYLINUX_S390X_IMAGE: ${{ matrix.manylinux_image }}
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: ''
+      - name: Display structure of wheelhouse files
+        if: ${{ always() }}
+        shell: bash
+        run: ls -R
+        working-directory: wheelhouse
+      - name: SHA256 files
+        shell: bash
+        run: find . -type f -name "*.whl" -exec sha256sum {} \;
+        working-directory: wheelhouse
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: python-dist
+          path: ./wheelhouse/*.whl
